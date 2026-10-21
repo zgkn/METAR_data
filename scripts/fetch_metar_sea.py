@@ -38,6 +38,23 @@ COUNTRIES = {
     "TL": "Timor-Leste",
 }
 
+# IEM network listings are not always country-pure (e.g. Vietnamese VVCR/VVCT/VVPQ sit in
+# LA__ASOS, Brunei's WBSB sits in MY__ASOS), so country comes from the ICAO prefix when
+# known; the `network` column keeps the IEM listing. Longest prefix wins.
+ICAO_PREFIX_COUNTRY = {
+    "WBSB": "BN", "WS": "SG", "WM": "MY", "WB": "MY", "WI": "ID", "WA": "ID", "WP": "TL",
+    "VT": "TH", "VV": "VN", "RP": "PH", "VD": "KH", "VL": "LA", "VY": "MM",
+}
+
+
+def country_code(station, network):
+    for n in (4, 2):
+        code = ICAO_PREFIX_COUNTRY.get(station[:n])
+        if code:
+            return code
+    return network[:2]
+
+
 # Sumatra / Kalimantan airports that matter for haze analysis. They are always
 # requested, even if a network listing omits them, and reported separately.
 HAZE_WATCHLIST = {
@@ -46,13 +63,12 @@ HAZE_WATCHLIST = {
     "WIOO": "Pontianak",
     "WAOO": "Banjarmasin",
     "WIMM": "Medan",
-    "WIPT": "Padang",
+    "WIEE": "Padang (Minangkabau)",
     "WIJJ": "Jambi",
     "WIPL": "Bengkulu",
     "WIPK": "Pangkal Pinang",
     "WALL": "Balikpapan",
     "WAOP": "Palangkaraya",
-    "WIOK": "Ketapang",
     "WAQQ": "Tarakan",
 }
 
@@ -291,7 +307,10 @@ def main():
     df["valid_sgt"] = df["valid_utc"].dt.tz_convert(LOCAL_TZ).dt.strftime("%Y-%m-%d %H:%M")
     df["valid_utc"] = df["valid_utc"].dt.strftime("%Y-%m-%d %H:%M")
     df["network"] = df["station"].map(station_net)
-    df["country"] = df["network"].str[:2].map(COUNTRIES)
+    df["country"] = [COUNTRIES.get(country_code(st, nw)) for st, nw in zip(df["station"], df["network"])]
+    moved = df[df["network"].str[:2].map(COUNTRIES) != df["country"]]
+    for st, grp in moved.groupby("station"):
+        log(f"Country override: {st} listed in {grp['network'].iloc[0]} -> {grp['country'].iloc[0]}")
     df = df.drop(columns=["valid"])
     lead = ["station", "network", "country", "valid_utc", "valid_sgt"]
     df = df[lead + [c for c in df.columns if c not in lead]]
@@ -335,7 +354,7 @@ def main():
     lines += ["", "Haze watchlist (Sumatra/Kalimantan):"]
     counts = df["station"].value_counts()
     for s, name in HAZE_WATCHLIST.items():
-        note = "; not in IEM network listing" if s in watch_not_listed else ""
+        note = "; not in any IEM network listing (no data available from IEM)" if s in watch_not_listed else ""
         lines.append(f"  {s} {name}: {int(counts.get(s, 0))} obs{note}")
     if unrequested:
         lines.append("Returned but not requested (unexpected): " + ", ".join(unrequested))
