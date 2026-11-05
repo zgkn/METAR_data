@@ -1,0 +1,511 @@
+<meta charset="utf-8">
+<title>SEA METAR Winds</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: time controls above a pannable wind-barb map; a collapsible card floats over the map's bottom edge
+   and holds the 48 h time series for one station. Neutrals lean cool-blue to sit with the sea/land tones. */
+:root {
+  --bg: #fcfcfb;
+  --fg: #0b0b0b;
+  --muted: #66645f;
+  --grid: #e1e0d9;
+  --sea: #f1f5f8;
+  --land: #e0e5ea;
+  --coast: #b4bdc6;
+  --card: rgba(255, 255, 255, 0.97);
+  --accent: #2a78d6;
+  --alert: #d03b3b;
+  --chip-bg: rgba(11, 11, 11, 0.92);
+  --chip-fg: #ffffff;
+  --btn: #f4f3ee;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1214; --fg: #e8ecef; --muted: #9aa4ab; --grid: #2a3238; --sea: #0e161c; --land: #1c2730;
+    --coast: #3b4954; --card: rgba(21, 27, 32, 0.97); --accent: #6aa9f0; --alert: #f08585;
+    --chip-bg: rgba(232, 236, 239, 0.95); --chip-fg: #0b0b0b; --btn: #1a2127; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1214; --fg: #e8ecef; --muted: #9aa4ab; --grid: #2a3238; --sea: #0e161c; --land: #1c2730;
+  --coast: #3b4954; --card: rgba(21, 27, 32, 0.97); --accent: #6aa9f0; --alert: #f08585;
+  --chip-bg: rgba(232, 236, 239, 0.95); --chip-fg: #0b0b0b; --btn: #1a2127; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding-block: 20px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1180px; margin: 0 auto; }
+h1 { font-size: 1.35rem; margin: 0 0 4px; text-wrap: balance; }
+.meta { color: var(--muted); font-size: 0.85rem; margin: 0 0 14px; }
+[hidden] { display: none !important; }
+button, select { font: inherit; color: var(--fg); }
+button { background: var(--btn); border: 1px solid var(--grid); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select { background: var(--btn); border: 1px solid var(--grid); border-radius: 6px; padding: 5px 8px; max-width: 100%; }
+
+.bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.bar input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--accent); }
+.when { font-variant-numeric: tabular-nums; font-weight: 600; }
+.when small { font-weight: 400; color: var(--muted); }
+
+.mapbox { position: relative; height: clamp(440px, 80vh, 780px); background: var(--sea); border: 1px solid var(--grid);
+  border-radius: 8px; overflow: hidden; }
+#map { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; }
+#map.drag { cursor: grabbing; }
+.land { fill: var(--land); stroke: var(--coast); stroke-width: 0.7; stroke-linejoin: round; }
+.grat { stroke: var(--grid); stroke-width: 0.6; fill: none; }
+.glab { fill: var(--muted); font-size: 10px; }
+.barb { stroke: var(--fg); stroke-width: 1.5; fill: none; stroke-linecap: round; }
+.pennant { fill: var(--fg); stroke: var(--fg); stroke-width: 1; }
+.calm { fill: var(--sea); stroke: var(--fg); stroke-width: 1.4; }
+.nd { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 2; }
+.pin { fill: var(--fg); }
+.sel { fill: none; stroke: var(--accent); stroke-width: 2; }
+.lbl { fill: var(--fg); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--sea); stroke-width: 3px; }
+.hit { fill: transparent; cursor: pointer; }
+.zoom { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
+.zoom button { width: 32px; height: 32px; padding: 0; font-size: 16px; line-height: 1; background: var(--card); }
+
+.ov { position: absolute; left: 10px; bottom: 10px; width: min(880px, calc(100% - 20px)); height: clamp(250px, 42%, 360px);
+  display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--grid); border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18); }
+.ov.collapsed { height: auto; }
+.ovhead { display: flex; align-items: center; gap: 8px; padding: 8px 10px; flex-wrap: wrap; }
+.ovhead select { flex: 0 1 auto; min-width: 0; }
+.ovhead .tg { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.chev { display: inline-block; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px); transition: transform 0.15s; }
+.ov.collapsed .chev { transform: rotate(-135deg) translate(-2px, -2px); }
+.chips { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.chip { padding: 3px 9px; font-size: 12px; border-radius: 999px; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.ovbody { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 6px 6px; }
+#charts { flex: 1; min-height: 0; position: relative; }
+#cs { display: block; width: 100%; height: 100%; touch-action: pan-y; cursor: crosshair; user-select: none; }
+.readout { font-size: 12px; color: var(--muted); padding: 4px 6px 0; font-variant-numeric: tabular-nums; }
+.readout b { color: var(--fg); font-weight: 600; }
+.readout code { display: block; font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--fg); overflow-wrap: anywhere; margin-top: 2px; }
+
+.ax { fill: var(--muted); font-size: 10px; }
+.axb { fill: var(--fg); font-size: 10px; font-weight: 600; }
+.ptitle { fill: var(--fg); font-size: 11px; font-weight: 600; }
+.pleg { fill: var(--muted); font-size: 10px; }
+.gl { stroke: var(--grid); stroke-width: 0.8; }
+.ref { stroke: var(--muted); stroke-width: 0.8; stroke-dasharray: 3 3; }
+.ln { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.s-vis { stroke: var(--accent); } .f-vis { fill: var(--accent); }
+.s-spd { stroke: var(--fg); } .f-spd { fill: var(--fg); }
+.f-gst { fill: var(--alert); }
+.f-dir { fill: var(--fg); }
+.s-tmp { stroke: var(--fg); } .s-dew { stroke: var(--accent); }
+.cur { stroke: var(--fg); stroke-width: 1.4; }
+.hov { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.empty { fill: var(--muted); font-size: 12px; }
+
+#tip { position: absolute; display: none; pointer-events: none; z-index: 20; background: var(--chip-bg); color: var(--chip-fg);
+  font-size: 11px; line-height: 1.5; padding: 6px 9px; border-radius: 6px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+#tip .h { font-weight: 600; margin-bottom: 2px; }
+.hint { color: var(--muted); font-size: 0.8rem; margin: 8px 0 0; }
+details { margin-top: 14px; }
+summary { cursor: pointer; font-weight: 600; }
+.tw { overflow-x: auto; margin-top: 8px; border: 1px solid var(--grid); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+tr:last-child td { border-bottom: none; }
+td.m { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: normal; min-width: 260px; }
+footer { color: var(--muted); font-size: 0.8rem; margin-top: 18px; }
+a { color: var(--accent); }
+@media (max-width: 560px) {
+  .mapbox { height: max(560px, 86vh); }
+  .ov { left: 6px; bottom: 6px; width: calc(100% - 12px); height: clamp(330px, 57%, 450px); }
+  .ov.collapsed { height: auto; }
+  .ovhead select { flex: 1 1 120px; }
+  .chips { margin-left: 0; }
+}
+</style>
+
+<div class="wrap">
+  <h1>Southeast Asia METAR winds</h1>
+  <p class="meta" id="meta"></p>
+
+  <div class="bar">
+    <button id="prev" aria-label="Previous hour">&#9664;</button>
+    <input id="tslider" type="range" min="0" value="0" step="1" aria-label="Map time, hourly">
+    <button id="next" aria-label="Next hour">&#9654;</button>
+    <button id="play" aria-label="Play through the hours" aria-pressed="false">Play</button>
+    <span class="when" id="when"></span>
+  </div>
+
+  <div class="mapbox" id="mapbox">
+    <svg id="map" role="img" aria-label="Map of METAR surface wind barbs, 6°S to 6°N, 95°E to 120°E"></svg>
+    <div class="zoom">
+      <button id="zin" aria-label="Zoom in">+</button>
+      <button id="zout" aria-label="Zoom out">&minus;</button>
+      <button id="zreset" aria-label="Reset view">&#8634;</button>
+    </div>
+
+    <section class="ov" id="ov" aria-label="Observation time series, past 48 hours">
+      <div class="ovhead">
+        <button class="tg" id="ovtoggle" aria-expanded="true" aria-controls="ovbody"><span class="chev" aria-hidden="true"></span>Past 48 h</button>
+        <select id="stsel" aria-label="Station"></select>
+        <div class="chips" role="group" aria-label="Variables shown">
+          <button class="chip" data-v="vis" aria-pressed="true">Visibility</button>
+          <button class="chip" data-v="wind" aria-pressed="true">Wind</button>
+          <button class="chip" data-v="dir" aria-pressed="true">Direction</button>
+          <button class="chip" data-v="temp" aria-pressed="false">Temp</button>
+        </div>
+      </div>
+      <div class="ovbody" id="ovbody">
+        <div id="charts"><svg id="cs" role="img" aria-label="Time series of visibility, wind and temperature for the selected station"></svg></div>
+        <div class="readout" id="readout"></div>
+      </div>
+    </section>
+    <div id="tip"></div>
+  </div>
+  <p class="hint">Each barb points toward where the wind blows from; half barb 5 kt, full barb 10 kt, pennant 50 kt. Open circle: calm (under 1 kt) or variable direction. Dashed ring: no report within 30 min of the map time. Drag to pan, scroll or pinch to zoom. Click a station, or scrub the time series, to change what the map and overlay show.</p>
+
+  <details id="tbl">
+    <summary>Observations at the map time (table)</summary>
+    <div class="tw"><table id="tbody"></table></div>
+  </details>
+  <footer id="foot"></footer>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function () {
+  'use strict';
+  var D = JSON.parse(document.getElementById('data').textContent);
+  var $ = function (id) { return document.getElementById(id); };
+  var MS_MIN = 60000, MS_HR = 3600000, SGT_OFF = 8 * MS_HR;
+  var T0 = D.t0, SPAN = D.span, N = D.nsteps;
+  var stepT = function (i) { return D.step0 + i * MS_HR; };
+  var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  var p3 = function (n) { return (n < 10 ? '00' : n < 100 ? '0' : '') + n; };
+  function fmtSGT(ms) { var d = new Date(ms + SGT_OFF); return DOW[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) + ' SGT'; }
+  function fmtUTC(ms) { var d = new Date(ms); return d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) + ' UTC'; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  // ---- data prep: nearest report (within 30 min) to each hourly step -------------------------------
+  var S = D.stations;
+  S.forEach(function (st) {
+    st.at = [];
+    for (var i = 0; i < N; i++) {
+      var target = (stepT(i) - T0) / MS_MIN, best = -1, bd = 30.5;
+      for (var k = 0; k < st.t.length; k++) { var d = Math.abs(st.t[k] - target); if (d < bd) { bd = d; best = k; } }
+      st.at.push(best);
+    }
+  });
+  var rings = D.land.map(function (r) {
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (var i = 0; i < r.length; i += 2) { if (r[i] < x0) x0 = r[i]; if (r[i] > x1) x1 = r[i]; if (r[i + 1] < y0) y0 = r[i + 1]; if (r[i + 1] > y1) y1 = r[i + 1]; }
+    return { p: r, b: [x0, y0, x1, y1] };
+  });
+
+  // ---- formatting -------------------------------------------------------------------------------
+  function windTxt(st, k) {
+    var s = st.spd[k], d = st.dir[k];
+    if (s == null) return '–';
+    if (s < 1) return 'Calm';
+    return (d == null ? 'VRB' : p3(Math.round(d)) + '°') + ' ' + Math.round(s) + ' kt' + (st.gst[k] != null ? ' G' + Math.round(st.gst[k]) : '');
+  }
+  function visTxt(v) { return v == null ? '–' : (v >= 9.95 ? '≥10 km' : v.toFixed(1) + ' km'); }
+  function tmpTxt(st, k) { var a = st.tmp[k], b = st.dew[k]; return a == null ? '–' : a.toFixed(0) + ' / ' + (b == null ? '–' : b.toFixed(0)) + ' °C'; }
+
+  // ---- state -------------------------------------------------------------------------------------
+  var step = N - 1, sel = 0, moved = false, W = 0, H = 0, view = { cx: 107.5, cy: 0, ppd: 30 };
+  var on = { vis: true, wind: true, dir: true, temp: false };
+  var playTimer = null;
+  var mapbox = $('mapbox'), map = $('map'), ov = $('ov'), tip = $('tip'), cs = $('cs'), chartsEl = $('charts');
+  var wp = S.findIndex(function (s) { return s.id === 'WIPP'; });
+  sel = wp >= 0 ? wp : 0;
+
+  // ---- map -------------------------------------------------------------------------------------------
+  var px = function (lon) { return W / 2 + (lon - view.cx) * view.ppd; };
+  var py = function (lat) { return H / 2 - (lat - view.cy) * view.ppd; };
+  function fitView() {
+    var freeH = Math.max(120, H - ov.offsetHeight - 14);
+    var ppd = Math.max(6, Math.min((W - 28) / (D.box.lon[1] - D.box.lon[0]), (freeH - 24) / (D.box.lat[1] - D.box.lat[0])));
+    view.ppd = ppd; view.cx = 107.5; view.cy = (freeH / 2 - H / 2) / ppd; moved = false;
+  }
+  function barbPath(x, y, dir, spd, L) {
+    var th = dir * Math.PI / 180, ux = Math.sin(th), uy = -Math.cos(th), qx = -uy, qy = ux;
+    var f = 11, gap = 4.2, w = 4.6, pos = L;
+    var P = function (d) { return [x + ux * d, y + uy * d]; };
+    var line = 'M' + x.toFixed(1) + ' ' + y.toFixed(1) + 'L' + P(L).map(function (v) { return v.toFixed(1); }).join(' ');
+    var pen = '', r5 = Math.round(spd / 5) * 5, n50 = Math.floor(r5 / 50), rem = r5 - n50 * 50, n10 = Math.floor(rem / 10), n5 = (rem % 10) >= 5 ? 1 : 0, i;
+    for (i = 0; i < n50; i++) {
+      var a = P(pos), b = P(pos - w);
+      pen += 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'L' + (a[0] + qx * f).toFixed(1) + ' ' + (a[1] + qy * f).toFixed(1) + 'L' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + 'Z';
+      pos -= w + gap;
+    }
+    for (i = 0; i < n10; i++) {
+      var s = P(pos);
+      line += 'M' + s[0].toFixed(1) + ' ' + s[1].toFixed(1) + 'L' + (s[0] + qx * f + ux * f * 0.35).toFixed(1) + ' ' + (s[1] + qy * f + uy * f * 0.35).toFixed(1);
+      pos -= gap;
+    }
+    if (n5) {
+      if (!n50 && !n10) pos -= gap;
+      var h = P(pos), g = f * 0.5;
+      line += 'M' + h[0].toFixed(1) + ' ' + h[1].toFixed(1) + 'L' + (h[0] + qx * g + ux * g * 0.35).toFixed(1) + ' ' + (h[1] + qy * g + uy * g * 0.35).toFixed(1);
+    }
+    return { line: line, pen: pen };
+  }
+  function drawMap() {
+    var out = [], i, lonMin = view.cx - W / 2 / view.ppd, lonMax = view.cx + W / 2 / view.ppd, latMin = view.cy - H / 2 / view.ppd, latMax = view.cy + H / 2 / view.ppd;
+    var d = '';
+    rings.forEach(function (r) {
+      if (r.b[2] < lonMin || r.b[0] > lonMax || r.b[3] < latMin || r.b[1] > latMax) return;
+      var p = r.p;
+      d += 'M' + px(p[0]).toFixed(1) + ' ' + py(p[1]).toFixed(1);
+      for (var j = 2; j < p.length; j += 2) d += 'L' + px(p[j]).toFixed(1) + ' ' + py(p[j + 1]).toFixed(1);
+      d += 'Z';
+    });
+    out.push('<path class="land" d="' + d + '"/>');
+    var gs = view.ppd < 25 ? 5 : view.ppd < 60 ? 2 : view.ppd < 150 ? 1 : 0.5, v;
+    for (v = Math.ceil(lonMin / gs) * gs; v <= lonMax; v += gs) { out.push('<line class="grat" x1="' + px(v) + '" x2="' + px(v) + '" y1="0" y2="' + H + '"/><text class="glab" x="' + (px(v) + 3) + '" y="12">' + v + '°E</text>'); }
+    for (v = Math.ceil(latMin / gs) * gs; v <= latMax; v += gs) { out.push('<line class="grat" y1="' + py(v) + '" y2="' + py(v) + '" x1="0" x2="' + W + '"/><text class="glab" x="4" y="' + (py(v) - 3) + '">' + (v < 0 ? -v + '°S' : v + (v > 0 ? '°N' : '°')) + '</text>'); }
+    var L = W < 560 ? 22 : 28, order = S.map(function (_, k) { return k; }).filter(function (k) { return k !== sel; }).concat([sel]);
+    order.forEach(function (k) {
+      var st = S[k], x = px(st.lon), y = py(st.lat);
+      if (x < -40 || x > W + 40 || y < -40 || y > H + 40) return;
+      var o = st.at[step], g = '<g class="st" data-i="' + k + '" tabindex="0" role="button" aria-label="' + esc(st.id + ' ' + st.name) + '">';
+      if (k === sel) g += '<circle class="sel" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="10"/>';
+      if (o < 0) g += '<circle class="nd" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4"/>';
+      else if (st.spd[o] == null || st.spd[o] < 1 || st.dir[o] == null) g += '<circle class="calm" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="5"/>';
+      else { var b = barbPath(x, y, st.dir[o], st.spd[o], L); g += '<path class="barb" d="' + b.line + '"/>' + (b.pen ? '<path class="pennant" d="' + b.pen + '"/>' : '') + '<circle class="pin" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="1.8"/>'; }
+      if (k === sel || view.ppd >= 70) g += '<text class="lbl" x="' + (x + 8).toFixed(1) + '" y="' + (y + 14).toFixed(1) + '">' + esc(st.id) + '</text>';
+      g += '<circle class="hit" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="12"/></g>';
+      out.push(g);
+    });
+    map.innerHTML = out.join('');
+  }
+
+  // ---- charts ----------------------------------------------------------------------------------------
+  function niceTicks(lo, hi, n) {
+    var raw = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / mag, stp = (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * mag, t = [];
+    for (var v = Math.ceil(lo / stp) * stp; v <= hi + 1e-9; v += stp) t.push(Math.round(v * 1000) / 1000);
+    return t;
+  }
+  var CH = null; // layout of the current chart draw, for hover/scrub maths
+  function drawCharts() {
+    var st = S[sel], w = chartsEl.clientWidth, h = chartsEl.clientHeight;
+    if (w < 40 || h < 40) return;
+    cs.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    var x0 = 40, x1 = w - 10, axisH = 20, specs = [];
+    var X = function (ms) { return x0 + (ms - T0) / (SPAN * MS_MIN) * (x1 - x0); };
+    if (on.vis) specs.push({ k: 'vis', title: 'Visibility (km)', y0: 0, y1: 10, ticks: [0, 5, 10], ref: 5, leg: [] });
+    if (on.wind) {
+      var mx = 15; st.spd.concat(st.gst).forEach(function (v) { if (v != null && v > mx) mx = v; });
+      var top = Math.ceil(mx / 5) * 5;
+      specs.push({ k: 'wind', title: 'Wind (kt)', y0: 0, y1: top, ticks: niceTicks(0, top, 3), leg: [['line', 'f-spd', 'speed'], ['dot', 'f-gst', 'gust']] });
+    }
+    if (on.dir) specs.push({ k: 'dir', title: 'Direction (from)', y0: 0, y1: 360, ticks: [0, 90, 180, 270, 360], tl: { 0: 'N', 90: 'E', 180: 'S', 270: 'W', 360: 'N' }, leg: [] });
+    if (on.temp) {
+      var vals = st.tmp.concat(st.dew).filter(function (v) { return v != null; });
+      var lo = vals.length ? Math.floor(Math.min.apply(null, vals)) - 1 : 20, hi = vals.length ? Math.ceil(Math.max.apply(null, vals)) + 1 : 35;
+      specs.push({ k: 'temp', title: 'Temp / dew point (°C)', y0: lo, y1: hi, ticks: niceTicks(lo, hi, 3), leg: [['line', 'f-spd', 'temp'], ['line', 'f-vis', 'dew point']] });
+    }
+    var out = [], gap = 8, n = specs.length;
+    // x grid + labels every 6 h SGT
+    var sg0 = Math.ceil((T0 + SGT_OFF) / (6 * MS_HR)) * 6 * MS_HR - SGT_OFF, grid = [], t;
+    for (t = sg0; t <= T0 + SPAN * MS_MIN; t += 6 * MS_HR) grid.push(t);
+    if (!n) { out.push('<text class="empty" x="' + w / 2 + '" y="' + h / 2 + '" text-anchor="middle">Choose a variable above.</text>'); cs.innerHTML = out.join(''); CH = null; return; }
+    var ph = Math.max(34, (h - axisH - gap * (n - 1) - 2) / n), plots = [];
+    specs.forEach(function (sp, pi) {
+      var y0 = 2 + pi * (ph + gap), y1 = y0 + ph, Y = function (v) { return y1 - (v - sp.y0) / (sp.y1 - sp.y0) * (y1 - y0 - 4) - 2; };
+      plots.push({ sp: sp, y0: y0, y1: y1 });
+      grid.forEach(function (g) { out.push('<line class="gl" x1="' + X(g) + '" x2="' + X(g) + '" y1="' + y0 + '" y2="' + y1 + '"/>'); });
+      sp.ticks.forEach(function (tv) {
+        out.push('<line class="gl" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(tv) + '" y2="' + Y(tv) + '"/><text class="ax" x="' + (x0 - 5) + '" y="' + (Y(tv) + 3) + '" text-anchor="end">' + (sp.tl ? sp.tl[tv] : tv) + '</text>');
+      });
+      if (sp.ref != null) out.push('<line class="ref" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(sp.ref) + '" y2="' + Y(sp.ref) + '"/>');
+      var series = sp.k === 'vis' ? [['line', 's-vis', st.vis]] : sp.k === 'wind' ? [['line', 's-spd', st.spd], ['dot', 'f-gst', st.gst]] : sp.k === 'dir' ? [['dot', 'f-dir', st.dir]] : [['line', 's-tmp', st.tmp], ['line', 's-dew', st.dew]];
+      series.forEach(function (se) {
+        var v = se[2], d = '', prev = -1e9, k;
+        for (k = 0; k < st.t.length; k++) {
+          if (v[k] == null) { prev = -1e9; continue; }
+          var xx = X(T0 + st.t[k] * MS_MIN), yy = Y(Math.max(sp.y0, Math.min(sp.y1, v[k])));
+          if (se[0] === 'dot') out.push('<circle class="' + se[1] + '" cx="' + xx.toFixed(1) + '" cy="' + yy.toFixed(1) + '" r="' + (se[1] === 'f-gst' ? 2.6 : 2.2) + '"/>');
+          else { d += (st.t[k] - prev > 100 ? 'M' : 'L') + xx.toFixed(1) + ' ' + yy.toFixed(1); prev = st.t[k]; }
+        }
+        if (se[0] === 'line') out.push('<path class="ln ' + se[1] + '" d="' + d.replace(/^L/, 'M') + '"/>');
+      });
+      // title + inline legend (text stays in ink; the mark carries the series colour)
+      out.push('<text class="ptitle" x="' + (x0 + 4) + '" y="' + (y0 + 11) + '">' + sp.title + '</text>');
+      var lx = x0 + 4 + sp.title.length * 6.1 + 12;
+      sp.leg.forEach(function (lg) {
+        out.push((lg[0] === 'line' ? '<rect class="' + lg[1] + '" x="' + lx + '" y="' + (y0 + 7) + '" width="10" height="2.5"/>' : '<circle class="' + lg[1] + '" cx="' + (lx + 4) + '" cy="' + (y0 + 8) + '" r="2.6"/>') + '<text class="pleg" x="' + (lx + 14) + '" y="' + (y0 + 11) + '">' + lg[2] + '</text>');
+        lx += 14 + lg[2].length * 5.6 + 12;
+      });
+    });
+    var yb = 2 + n * ph + (n - 1) * gap;
+    grid.forEach(function (g) {
+      var sd = new Date(g + SGT_OFF), mid = sd.getUTCHours() === 0;
+      out.push('<text class="' + (mid ? 'axb' : 'ax') + '" x="' + X(g) + '" y="' + (yb + 13) + '" text-anchor="middle">' + (mid ? sd.getUTCDate() + ' ' + MON[sd.getUTCMonth()] : p2(sd.getUTCHours()) + ':00') + '</text>');
+    });
+    if (!st.t.length) out.push('<text class="empty" x="' + (x0 + x1) / 2 + '" y="' + yb / 2 + '" text-anchor="middle">No reports from ' + esc(st.id) + ' in the past 48 h.</text>');
+    out.push('<line class="hov" id="hov" y1="0" y2="' + yb + '" x1="-5" x2="-5"/><line class="cur" id="cur" y1="0" y2="' + yb + '" x1="-5" x2="-5"/>');
+    cs.innerHTML = out.join('');
+    CH = { x0: x0, x1: x1, yb: yb, X: X, plots: plots };
+    updateCursor();
+  }
+  function updateCursor() {
+    var c = document.getElementById('cur'); if (!c || !CH) return;
+    var x = CH.X(stepT(step)); c.setAttribute('x1', x); c.setAttribute('x2', x);
+  }
+  function msAtClient(clientX) {
+    var r = cs.getBoundingClientRect(), x = clientX - r.left;
+    return T0 + (x - CH.x0) / (CH.x1 - CH.x0) * SPAN * MS_MIN;
+  }
+  function nearestObs(st, ms) {
+    var tm = (ms - T0) / MS_MIN, best = -1, bd = 1e9;
+    for (var k = 0; k < st.t.length; k++) { var d = Math.abs(st.t[k] - tm); if (d < bd) { bd = d; best = k; } }
+    return best;
+  }
+  function showTip(html, cx, cy) {
+    var r = mapbox.getBoundingClientRect();
+    tip.innerHTML = html; tip.style.display = 'block';
+    var tw = tip.offsetWidth, th = tip.offsetHeight, l = cx - r.left + 14, t = cy - r.top - th - 12;
+    if (l + tw > r.width - 6) l = cx - r.left - tw - 14;
+    if (t < 4) t = cy - r.top + 16;
+    tip.style.left = Math.max(4, l) + 'px'; tip.style.top = t + 'px';
+  }
+  function obsRows(st, k) {
+    return '<div>Wind ' + windTxt(st, k) + '</div><div>Visibility ' + visTxt(st.vis[k]) + '</div><div>Temp / dew ' + tmpTxt(st, k) + '</div>';
+  }
+  function chartHover(e) {
+    if (!CH) return;
+    var st = S[sel], ms = msAtClient(e.clientX), hov = document.getElementById('hov');
+    if (e.buttons || e.pointerType === 'touch') scrub(ms);
+    if (e.pointerType === 'touch') return;
+    var k = nearestObs(st, ms);
+    if (k < 0) { tip.style.display = 'none'; return; }
+    var x = CH.X(T0 + st.t[k] * MS_MIN); hov.setAttribute('x1', x); hov.setAttribute('x2', x);
+    showTip('<div class="h">' + esc(st.id) + ' · ' + fmtSGT(T0 + st.t[k] * MS_MIN) + '</div>' + obsRows(st, k), e.clientX, e.clientY);
+  }
+  function scrub(ms) {
+    var i = Math.max(0, Math.min(N - 1, Math.round((ms - D.step0) / MS_HR)));
+    if (i !== step) setStep(i);
+  }
+
+  // ---- readout, table, controls --------------------------------------------------------------------------
+  function drawReadout() {
+    var st = S[sel], o = st.at[step], ms = stepT(step);
+    var h = '<b>' + esc(st.id) + '</b> ' + esc(st.name) + ' · ' + fmtSGT(ms) + ' · ';
+    if (o < 0) h += 'no report within 30 min';
+    else h += 'wind <b>' + windTxt(st, o) + '</b> · visibility <b>' + visTxt(st.vis[o]) + '</b> · temp / dew <b>' + tmpTxt(st, o) + '</b><code>' + esc(st.metar[o]) + '</code>';
+    $('readout').innerHTML = h;
+  }
+  function drawTable() {
+    if (!$('tbl').open) return;
+    var h = '<thead><tr><th>Station</th><th>Name</th><th>Wind</th><th>Visibility</th><th>Temp / dew</th><th>Report (SGT)</th><th>METAR</th></tr></thead><tbody>';
+    S.forEach(function (st) {
+      var o = st.at[step];
+      h += '<tr><td><b>' + esc(st.id) + '</b></td><td>' + esc(st.name) + '</td>' + (o < 0 ? '<td colspan="5">no report within 30 min</td>' :
+        '<td>' + windTxt(st, o) + '</td><td>' + visTxt(st.vis[o]) + '</td><td>' + tmpTxt(st, o) + '</td><td>' + fmtSGT(T0 + st.t[o] * MS_MIN).replace(' SGT', '') + '</td><td class="m">' + esc(st.metar[o]) + '</td>') + '</tr>';
+    });
+    $('tbody').innerHTML = h + '</tbody>';
+  }
+  function setStep(i) {
+    step = i; $('tslider').value = i;
+    $('when').innerHTML = fmtSGT(stepT(i)) + ' <small>(' + fmtUTC(stepT(i)) + ')</small>';
+    drawMap(); updateCursor(); drawReadout(); drawTable();
+  }
+  function setSel(k) { sel = k; $('stsel').value = k; drawMap(); drawCharts(); drawReadout(); }
+  function measure() {
+    var r = mapbox.getBoundingClientRect(); W = Math.round(r.width); H = Math.round(r.height);
+    map.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  }
+  function relayout() { measure(); if (!moved) fitView(); drawMap(); drawCharts(); }
+
+  // ---- map interaction: drag, wheel, pinch, click-to-select -----------------------------------------------
+  var ptrs = {}, downT = null, downXY = null, dragged = false, pinch0 = null;
+  function zoomAt(f, cx, cy) {
+    var np = Math.max(6, Math.min(900, view.ppd * f)); f = np / view.ppd;
+    var lon = view.cx + (cx - W / 2) / view.ppd, lat = view.cy - (cy - H / 2) / view.ppd;
+    view.ppd = np; view.cx = lon - (cx - W / 2) / np; view.cy = lat + (cy - H / 2) / np; moved = true; drawMap();
+  }
+  map.addEventListener('pointerdown', function (e) {
+    var r = map.getBoundingClientRect(); ptrs[e.pointerId] = { x: e.clientX - r.left, y: e.clientY - r.top };
+    map.setPointerCapture(e.pointerId); tip.style.display = 'none';
+    var ids = Object.keys(ptrs);
+    if (ids.length === 1) { downT = e.target.closest ? e.target.closest('.st') : null; downXY = [e.clientX, e.clientY]; dragged = false; }
+    if (ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); dragged = true; }
+  });
+  map.addEventListener('pointermove', function (e) {
+    var r = map.getBoundingClientRect(), p = ptrs[e.pointerId];
+    if (!p) { // hover tooltip
+      var g = e.pointerType === 'mouse' && e.target.closest ? e.target.closest('.st') : null;
+      if (!g) { tip.style.display = 'none'; return; }
+      var st = S[+g.dataset.i], o = st.at[step];
+      showTip('<div class="h">' + esc(st.id) + ' · ' + esc(st.name) + '</div>' + (o < 0 ? '<div>No report within 30 min</div>' : '<div>' + fmtSGT(T0 + st.t[o] * MS_MIN) + '</div>' + obsRows(st, o)), e.clientX, e.clientY);
+      return;
+    }
+    var nx = e.clientX - r.left, ny = e.clientY - r.top, ids = Object.keys(ptrs);
+    if (ids.length === 2) {
+      var other = ptrs[ids[0] == e.pointerId ? ids[1] : ids[0]], before = Math.hypot(p.x - other.x, p.y - other.y), after = Math.hypot(nx - other.x, ny - other.y);
+      if (before > 0) zoomAt(after / before, (nx + other.x) / 2, (ny + other.y) / 2);
+    } else {
+      if (!dragged && Math.hypot(e.clientX - downXY[0], e.clientY - downXY[1]) > 4) { dragged = true; map.classList.add('drag'); }
+      if (dragged) { view.cx -= (nx - p.x) / view.ppd; view.cy += (ny - p.y) / view.ppd; moved = true; drawMap(); }
+    }
+    p.x = nx; p.y = ny;
+  });
+  function endPtr(e) {
+    var had = ptrs[e.pointerId]; delete ptrs[e.pointerId];
+    if (!had) return;
+    if (!Object.keys(ptrs).length) { map.classList.remove('drag'); if (!dragged && downT) setSel(+downT.dataset.i); downT = null; }
+  }
+  map.addEventListener('pointerup', endPtr); map.addEventListener('pointercancel', endPtr);
+  map.addEventListener('pointerleave', function () { tip.style.display = 'none'; });
+  map.addEventListener('wheel', function (e) { e.preventDefault(); var r = map.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  map.addEventListener('dblclick', function (e) { var r = map.getBoundingClientRect(); zoomAt(1.6, e.clientX - r.left, e.clientY - r.top); });
+  map.addEventListener('keydown', function (e) { var g = e.target.closest && e.target.closest('.st'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSel(+g.dataset.i); } });
+  $('zin').onclick = function () { zoomAt(1.5, W / 2, H / 2); };
+  $('zout').onclick = function () { zoomAt(1 / 1.5, W / 2, H / 2); };
+  $('zreset').onclick = function () { fitView(); drawMap(); };
+
+  // ---- chart interaction ---------------------------------------------------------------------------------------
+  cs.addEventListener('pointermove', chartHover);
+  cs.addEventListener('pointerdown', function (e) { if (CH) scrub(msAtClient(e.clientX)); if (e.pointerType === 'mouse') cs.setPointerCapture(e.pointerId); });
+  cs.addEventListener('pointerleave', function () { tip.style.display = 'none'; var h = document.getElementById('hov'); if (h) { h.setAttribute('x1', -5); h.setAttribute('x2', -5); } });
+
+  // ---- controls ------------------------------------------------------------------------------------------------------
+  S.forEach(function (st, k) { var o = document.createElement('option'); o.value = k; o.textContent = st.id + ' · ' + st.name + (st.t.length ? '' : ' (no data)'); $('stsel').appendChild(o); });
+  $('stsel').value = sel;
+  $('stsel').onchange = function () { setSel(+this.value); };
+  $('tslider').max = N - 1;
+  $('tslider').oninput = function () { setStep(+this.value); };
+  $('prev').onclick = function () { setStep(Math.max(0, step - 1)); };
+  $('next').onclick = function () { setStep(Math.min(N - 1, step + 1)); };
+  $('play').onclick = function () {
+    var b = this;
+    if (playTimer) { clearInterval(playTimer); playTimer = null; b.textContent = 'Play'; b.setAttribute('aria-pressed', 'false'); return; }
+    if (step >= N - 1) setStep(0);
+    b.textContent = 'Pause'; b.setAttribute('aria-pressed', 'true');
+    playTimer = setInterval(function () { if (step >= N - 1) { clearInterval(playTimer); playTimer = null; b.textContent = 'Play'; b.setAttribute('aria-pressed', 'false'); } else setStep(step + 1); }, 450);
+  };
+  $('ovtoggle').onclick = function () {
+    var collapsed = ov.classList.toggle('collapsed');
+    this.setAttribute('aria-expanded', String(!collapsed)); $('ovbody').hidden = collapsed;
+    if (!moved) fitView();
+    drawMap(); if (!collapsed) drawCharts();
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (c) {
+    c.onclick = function () { on[c.dataset.v] = !on[c.dataset.v]; c.setAttribute('aria-pressed', String(on[c.dataset.v])); drawCharts(); };
+  });
+  $('tbl').addEventListener('toggle', drawTable);
+
+  var sgt0 = fmtSGT(stepT(0)), sgt1 = fmtSGT(stepT(N - 1));
+  $('meta').textContent = 'Hourly surface winds from METAR (Iowa Environmental Mesonet), ' + D.stations.length + ' stations in 6°S–6°N, 95–120°E. Map hours run ' + sgt0.replace(' SGT', '') + ' to ' + sgt1 + '. All times in SGT (UTC+8). Snapshot built ' + D.built + ' UTC.';
+  var nod = S.filter(function (s) { return !s.t.length; }).map(function (s) { return s.id; });
+  $('foot').textContent = 'Each map hour uses the report nearest that hour (within 30 min). Visibility is capped at 10 km (a METAR 9999). Stations with no reports in the window' + (nod.length ? ': ' + nod.join(', ') + '.' : ': none.');
+
+  if (window.ResizeObserver) new ResizeObserver(relayout).observe(mapbox); else window.addEventListener('resize', relayout);
+  measure(); fitView(); setStep(N - 1); drawCharts();
+})();
+</script>
