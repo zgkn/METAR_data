@@ -179,9 +179,10 @@ def main():
         s["vis"] = col(g, "vsby", lambda v: min(v * 1.609344, 10.0))   # miles -> km, capped at 10 (9999 m)
         s["tmp"] = col(g, "tmpf", lambda v: (v - 32) * 5 / 9)
         s["dew"] = col(g, "dwpf", lambda v: (v - 32) * 5 / 9)
+        s["wx"] = [str(w).strip() for w in g["wxcodes"].fillna("")]   # present weather, e.g. "-RA BR"
         s["metar"] = [str(m) for m in g["metar"]]
     for s in stations.values():
-        for k in ("t", "spd", "gst", "dir", "vis", "tmp", "dew", "metar"):
+        for k in ("t", "spd", "gst", "dir", "vis", "tmp", "dew", "wx", "metar"):
             s.setdefault(k, [])
     for sid in failed:  # request failed after retries: unknown, not "no data"
         stations[sid]["failed"] = True
