@@ -18,18 +18,21 @@
   --chip-bg: rgba(11, 11, 11, 0.92);
   --chip-fg: #ffffff;
   --btn: #f4f3ee;
+  --v5: #d9930d;
+  --v3: #e0642b;
+  --v15: #c62828;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f1214; --fg: #e8ecef; --muted: #9aa4ab; --grid: #2a3238; --sea: #0e161c; --land: #1c2730;
     --coast: #3b4954; --card: rgba(21, 27, 32, 0.97); --accent: #6aa9f0; --alert: #f08585;
-    --chip-bg: rgba(232, 236, 239, 0.95); --chip-fg: #0b0b0b; --btn: #1a2127; color-scheme: dark;
+    --chip-bg: rgba(232, 236, 239, 0.95); --chip-fg: #0b0b0b; --btn: #1a2127; color-scheme: dark; --v5: #f5b82e; --v3: #f58a5a; --v15: #ff6b6b;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1214; --fg: #e8ecef; --muted: #9aa4ab; --grid: #2a3238; --sea: #0e161c; --land: #1c2730;
   --coast: #3b4954; --card: rgba(21, 27, 32, 0.97); --accent: #6aa9f0; --alert: #f08585;
-  --chip-bg: rgba(232, 236, 239, 0.95); --chip-fg: #0b0b0b; --btn: #1a2127; color-scheme: dark;
+  --chip-bg: rgba(232, 236, 239, 0.95); --chip-fg: #0b0b0b; --btn: #1a2127; color-scheme: dark; --v5: #f5b82e; --v3: #f58a5a; --v15: #ff6b6b;
 }
 body { background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
   padding-block: 20px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -45,6 +48,10 @@ select { background: var(--btn); border: 1px solid var(--grid); border-radius: 6
 
 .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
 .bar input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--accent); }
+.views { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.views .lab { color: var(--muted); font-size: 0.85rem; margin-right: 2px; }
+.views button[aria-pressed="true"] { border-color: var(--fg); font-weight: 600; }
+.note { position: absolute; top: 22px; left: 10px; font-size: 11px; color: var(--muted); pointer-events: none; }
 .when { font-variant-numeric: tabular-nums; font-weight: 600; }
 .when small { font-weight: 400; color: var(--muted); }
 
@@ -61,6 +68,13 @@ select { background: var(--btn); border: 1px solid var(--grid); border-radius: 6
 .nd { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 2; }
 .pin { fill: var(--fg); }
 .sel { fill: none; stroke: var(--accent); stroke-width: 2; }
+.v5 .barb { stroke: var(--v5); stroke-width: 2; } .v5 .pennant { fill: var(--v5); stroke: var(--v5); } .v5 .pin { fill: var(--v5); } .v5 .calm { stroke: var(--v5); stroke-width: 2.2; }
+.v3 .barb { stroke: var(--v3); stroke-width: 2.4; } .v3 .pennant { fill: var(--v3); stroke: var(--v3); } .v3 .pin { fill: var(--v3); } .v3 .calm { stroke: var(--v3); stroke-width: 2.6; }
+.v15 .barb { stroke: var(--v15); stroke-width: 2.8; } .v15 .pennant { fill: var(--v15); stroke: var(--v15); } .v15 .pin { fill: var(--v15); } .v15 .calm { stroke: var(--v15); stroke-width: 3; }
+.vleg { margin-left: auto; display: inline-flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 0.85rem; color: var(--muted); }
+.sw { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; background: var(--fg); }
+.sw.v5 { background: var(--v5); height: 4px; } .sw.v3 { background: var(--v3); height: 5px; } .sw.v15 { background: var(--v15); height: 6px; }
+.ref.r-v5 { stroke: var(--v5); } .ref.r-v3 { stroke: var(--v3); } .ref.r-v15 { stroke: var(--v15); }
 .lbl { fill: var(--fg); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--sea); stroke-width: 3px; }
 .hit { fill: transparent; cursor: pointer; }
 .zoom { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -91,7 +105,7 @@ select { background: var(--btn); border: 1px solid var(--grid); border-radius: 6
 .ptitle { fill: var(--fg); font-size: 11px; font-weight: 600; }
 .pleg { fill: var(--muted); font-size: 10px; }
 .gl { stroke: var(--grid); stroke-width: 0.8; }
-.ref { stroke: var(--muted); stroke-width: 0.8; stroke-dasharray: 3 3; }
+.ref { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
 .ln { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
 .s-vis { stroke: var(--accent); } .f-vis { fill: var(--accent); }
 .s-spd { stroke: var(--fg); } .f-spd { fill: var(--fg); }
@@ -126,7 +140,7 @@ a { color: var(--accent); }
 </style>
 
 <div class="wrap">
-  <h1>Southeast Asia METAR winds</h1>
+  <h1>Southeast Asia and Japan METAR winds</h1>
   <p class="meta" id="meta"></p>
 
   <div class="bar">
@@ -137,8 +151,24 @@ a { color: var(--accent); }
     <span class="when" id="when"></span>
   </div>
 
+  <div class="views" role="group" aria-label="Map region">
+    <span class="lab">Jump to</span>
+    <button data-view="all">All</button>
+    <button data-view="maritime">Sumatra–Borneo</button>
+    <button data-view="mainland">Mainland SE Asia</button>
+    <button data-view="japan">Japan</button>
+    <span class="vleg" role="group" aria-label="Barb colour shows visibility">
+      <span>Visibility</span>
+      <span><i class="sw"></i>5 km or more</span>
+      <span><i class="sw v5"></i>under 5 km</span>
+      <span><i class="sw v3"></i>under 3 km</span>
+      <span><i class="sw v15"></i>under 1.5 km</span>
+    </span>
+  </div>
+
   <div class="mapbox" id="mapbox">
-    <svg id="map" role="img" aria-label="Map of METAR surface wind barbs, 6°S to 6°N, 95°E to 120°E"></svg>
+    <svg id="map" role="img" aria-label="Map of METAR surface wind barbs across Southeast Asia and Japan"></svg>
+    <div class="note" id="note"></div>
     <div class="zoom">
       <button id="zin" aria-label="Zoom in">+</button>
       <button id="zout" aria-label="Zoom out">&minus;</button>
@@ -163,7 +193,7 @@ a { color: var(--accent); }
     </section>
     <div id="tip"></div>
   </div>
-  <p class="hint">Each barb points toward where the wind blows from; half barb 5 kt, full barb 10 kt, pennant 50 kt. Open circle: calm (under 1 kt) or variable direction. Dashed ring: no report within 30 min of the map time. Drag to pan, scroll or pinch to zoom. Click a station, or scrub the time series, to change what the map and overlay show.</p>
+  <p class="hint">Barb colour shows visibility: amber under 5 km, orange under 3 km, red under 1.5 km (thicker as it gets worse). Each barb points toward where the wind blows from; half barb 5 kt, full barb 10 kt, pennant 50 kt. Open circle: calm (under 1 kt) or variable direction. Dashed ring: no report within 30 min of the map time. Drag to pan, scroll or pinch to zoom. When zoomed out, overlapping stations are thinned; zoom in to see them all. Click a station, or scrub the time series, to change what the map and overlay show.</p>
 
   <details id="tbl">
     <summary>Observations at the map time (table)</summary>
@@ -212,11 +242,12 @@ a { color: var(--accent); }
     if (s < 1) return 'Calm';
     return (d == null ? 'VRB' : p3(Math.round(d)) + '°') + ' ' + Math.round(s) + ' kt' + (st.gst[k] != null ? ' G' + Math.round(st.gst[k]) : '');
   }
+  function visCls(v) { return v == null ? '' : v < 1.5 ? ' v15' : v < 3 ? ' v3' : v < 5 ? ' v5' : ''; }
   function visTxt(v) { return v == null ? '–' : (v >= 9.95 ? '≥10 km' : v.toFixed(1) + ' km'); }
   function tmpTxt(st, k) { var a = st.tmp[k], b = st.dew[k]; return a == null ? '–' : a.toFixed(0) + ' / ' + (b == null ? '–' : b.toFixed(0)) + ' °C'; }
 
   // ---- state -------------------------------------------------------------------------------------
-  var step = N - 1, sel = 0, moved = false, W = 0, H = 0, view = { cx: 107.5, cy: 0, ppd: 30 };
+  var step = N - 1, sel = 0, moved = false, W = 0, H = 0, view = { cx: 107.5, cy: 0, ppd: 30 }, curView = 'all';
   var on = { vis: true, wind: true, dir: true, temp: false };
   var playTimer = null;
   var mapbox = $('mapbox'), map = $('map'), ov = $('ov'), tip = $('tip'), cs = $('cs'), chartsEl = $('charts');
@@ -226,10 +257,15 @@ a { color: var(--accent); }
   // ---- map -------------------------------------------------------------------------------------------
   var px = function (lon) { return W / 2 + (lon - view.cx) * view.ppd; };
   var py = function (lat) { return H / 2 - (lat - view.cy) * view.ppd; };
-  function fitView() {
-    var freeH = Math.max(120, H - ov.offsetHeight - 14);
-    var ppd = Math.max(6, Math.min((W - 28) / (D.box.lon[1] - D.box.lon[0]), (freeH - 24) / (D.box.lat[1] - D.box.lat[0])));
-    view.ppd = ppd; view.cx = 107.5; view.cy = (freeH / 2 - H / 2) / ppd; moved = false;
+  function syncViewBtns() {
+    Array.prototype.forEach.call(document.querySelectorAll('.views button'), function (b) { b.setAttribute('aria-pressed', String(!moved && b.dataset.view === curView)); });
+  }
+  function markMoved() { if (!moved) { moved = true; syncViewBtns(); } }
+  function fitView(key) {
+    if (key) curView = key;
+    var b = D.views[curView], freeH = Math.max(120, H - ov.offsetHeight - 14);
+    var ppd = Math.max(5, Math.min((W - 28) / (b.lon[1] - b.lon[0]), (freeH - 24) / (b.lat[1] - b.lat[0])));
+    view.ppd = ppd; view.cx = (b.lon[0] + b.lon[1]) / 2; view.cy = (b.lat[0] + b.lat[1]) / 2 - (H - freeH) / (2 * ppd); moved = false; syncViewBtns();
   }
   function barbPath(x, y, dir, spd, L) {
     var th = dir * Math.PI / 180, ux = Math.sin(th), uy = -Math.cos(th), qx = -uy, qy = ux;
@@ -266,13 +302,27 @@ a { color: var(--accent); }
     });
     out.push('<path class="land" d="' + d + '"/>');
     var gs = view.ppd < 25 ? 5 : view.ppd < 60 ? 2 : view.ppd < 150 ? 1 : 0.5, v;
-    for (v = Math.ceil(lonMin / gs) * gs; v <= lonMax; v += gs) { out.push('<line class="grat" x1="' + px(v) + '" x2="' + px(v) + '" y1="0" y2="' + H + '"/><text class="glab" x="' + (px(v) + 3) + '" y="12">' + v + '°E</text>'); }
-    for (v = Math.ceil(latMin / gs) * gs; v <= latMax; v += gs) { out.push('<line class="grat" y1="' + py(v) + '" y2="' + py(v) + '" x1="0" x2="' + W + '"/><text class="glab" x="4" y="' + (py(v) - 3) + '">' + (v < 0 ? -v + '°S' : v + (v > 0 ? '°N' : '°')) + '</text>'); }
-    var L = W < 560 ? 22 : 28, order = S.map(function (_, k) { return k; }).filter(function (k) { return k !== sel; }).concat([sel]);
+    for (v = Math.max(-180, Math.ceil(lonMin / gs) * gs); v <= Math.min(180, lonMax); v += gs) { out.push('<line class="grat" x1="' + px(v) + '" x2="' + px(v) + '" y1="0" y2="' + H + '"/><text class="glab" x="' + (px(v) + 3) + '" y="12">' + v + '°E</text>'); }
+    for (v = Math.max(-90, Math.ceil(latMin / gs) * gs); v <= Math.min(90, latMax); v += gs) { out.push('<line class="grat" y1="' + py(v) + '" y2="' + py(v) + '" x1="0" x2="' + W + '"/><text class="glab" x="4" y="' + (py(v) - 3) + '">' + (v < 0 ? -v + '°S' : v + (v > 0 ? '°N' : '°')) + '</text>'); }
+    var L = Math.max(14, Math.min(W < 560 ? 22 : 28, view.ppd * 1.1 + 6)), order = S.map(function (_, k) { return k; }).filter(function (k) { return k !== sel; }).concat([sel]);
+    var keep = null, shown = 0, inview = 0;
+    if (view.ppd < 25) { // thin overlapping stations when zoomed out: the selected one first, then those with a report
+      keep = {}; var pts = [], sep2 = 15 * 15;
+      var cand = [sel].concat(order.slice(0, -1).filter(function (k) { return S[k].at[step] >= 0; }), order.slice(0, -1).filter(function (k) { return S[k].at[step] < 0; }));
+      cand.forEach(function (k) {
+        var x = px(S[k].lon), y = py(S[k].lat);
+        if (x < -40 || x > W + 40 || y < -40 || y > H + 40) return;
+        inview++;
+        for (var q = 0; q < pts.length; q++) { var dx = pts[q][0] - x, dy = pts[q][1] - y; if (dx * dx + dy * dy < sep2) return; }
+        pts.push([x, y]); keep[k] = 1;
+      });
+    }
     order.forEach(function (k) {
       var st = S[k], x = px(st.lon), y = py(st.lat);
       if (x < -40 || x > W + 40 || y < -40 || y > H + 40) return;
-      var o = st.at[step], g = '<g class="st" data-i="' + k + '" tabindex="0" role="button" aria-label="' + esc(st.id + ' ' + st.name) + '">';
+      if (keep && !keep[k]) return;
+      shown++;
+      var o = st.at[step], vc = visCls(o < 0 ? null : st.vis[o]), g = '<g class="st' + vc + '" data-i="' + k + '" tabindex="0" role="button" aria-label="' + esc(st.id + ' ' + st.name) + '">';
       if (k === sel) g += '<circle class="sel" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="10"/>';
       if (o < 0) g += '<circle class="nd" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4"/>';
       else if (st.spd[o] == null || st.spd[o] < 1 || st.dir[o] == null) g += '<circle class="calm" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="5"/>';
@@ -282,6 +332,7 @@ a { color: var(--accent); }
       out.push(g);
     });
     map.innerHTML = out.join('');
+    $('note').textContent = keep && shown < inview ? 'Showing ' + shown + ' of ' + inview + ' stations in view. Zoom in for the rest.' : '';
   }
 
   // ---- charts ----------------------------------------------------------------------------------------
@@ -297,7 +348,7 @@ a { color: var(--accent); }
     cs.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
     var x0 = 40, x1 = w - 10, axisH = 20, specs = [];
     var X = function (ms) { return x0 + (ms - T0) / (SPAN * MS_MIN) * (x1 - x0); };
-    if (on.vis) specs.push({ k: 'vis', title: 'Visibility (km)', y0: 0, y1: 10, ticks: [0, 5, 10], ref: 5, leg: [] });
+    if (on.vis) specs.push({ k: 'vis', title: 'Visibility (km)', y0: 0, y1: 10, ticks: [0, 5, 10], refs: [[5, 'v5'], [3, 'v3'], [1.5, 'v15']], leg: [] });
     if (on.wind) {
       var mx = 15; st.spd.concat(st.gst).forEach(function (v) { if (v != null && v > mx) mx = v; });
       var top = Math.ceil(mx / 5) * 5;
@@ -322,7 +373,7 @@ a { color: var(--accent); }
       sp.ticks.forEach(function (tv) {
         out.push('<line class="gl" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(tv) + '" y2="' + Y(tv) + '"/><text class="ax" x="' + (x0 - 5) + '" y="' + (Y(tv) + 3) + '" text-anchor="end">' + (sp.tl ? sp.tl[tv] : tv) + '</text>');
       });
-      if (sp.ref != null) out.push('<line class="ref" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(sp.ref) + '" y2="' + Y(sp.ref) + '"/>');
+      (sp.refs || []).forEach(function (rf) { out.push('<line class="ref r-' + rf[1] + '" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(rf[0]) + '" y2="' + Y(rf[0]) + '"/>'); });
       var series = sp.k === 'vis' ? [['line', 's-vis', st.vis]] : sp.k === 'wind' ? [['line', 's-spd', st.spd], ['dot', 'f-gst', st.gst]] : sp.k === 'dir' ? [['dot', 'f-dir', st.dir]] : [['line', 's-tmp', st.tmp], ['line', 's-dew', st.dew]];
       series.forEach(function (se) {
         var v = se[2], d = '', prev = -1e9, k;
@@ -402,11 +453,11 @@ a { color: var(--accent); }
   }
   function drawTable() {
     if (!$('tbl').open) return;
-    var h = '<thead><tr><th>Station</th><th>Name</th><th>Wind</th><th>Visibility</th><th>Temp / dew</th><th>Report (SGT)</th><th>METAR</th></tr></thead><tbody>';
+    var h = '<thead><tr><th>Station</th><th>Name</th><th>Country</th><th>Wind</th><th>Visibility</th><th>Temp / dew</th><th>Report (SGT)</th><th>METAR</th></tr></thead><tbody>';
     S.forEach(function (st) {
       var o = st.at[step];
-      h += '<tr><td><b>' + esc(st.id) + '</b></td><td>' + esc(st.name) + '</td>' + (o < 0 ? '<td colspan="5">no report within 30 min</td>' :
-        '<td>' + windTxt(st, o) + '</td><td>' + visTxt(st.vis[o]) + '</td><td>' + tmpTxt(st, o) + '</td><td>' + fmtSGT(T0 + st.t[o] * MS_MIN).replace(' SGT', '') + '</td><td class="m">' + esc(st.metar[o]) + '</td>') + '</tr>';
+      h += '<tr><td><b>' + esc(st.id) + '</b></td><td>' + esc(st.name) + '</td><td>' + esc(st.cc) + '</td>' + (o < 0 ? '<td colspan="5">no report within 30 min</td>' :
+        '<td>' + windTxt(st, o) + '</td><td>' + (visCls(st.vis[o]) ? '<i class="sw' + visCls(st.vis[o]) + '"></i>' : '') + visTxt(st.vis[o]) + '</td><td>' + tmpTxt(st, o) + '</td><td>' + fmtSGT(T0 + st.t[o] * MS_MIN).replace(' SGT', '') + '</td><td class="m">' + esc(st.metar[o]) + '</td>') + '</tr>';
     });
     $('tbody').innerHTML = h + '</tbody>';
   }
@@ -425,9 +476,9 @@ a { color: var(--accent); }
   // ---- map interaction: drag, wheel, pinch, click-to-select -----------------------------------------------
   var ptrs = {}, downT = null, downXY = null, dragged = false, pinch0 = null;
   function zoomAt(f, cx, cy) {
-    var np = Math.max(6, Math.min(900, view.ppd * f)); f = np / view.ppd;
+    var np = Math.max(5, Math.min(900, view.ppd * f)); f = np / view.ppd;
     var lon = view.cx + (cx - W / 2) / view.ppd, lat = view.cy - (cy - H / 2) / view.ppd;
-    view.ppd = np; view.cx = lon - (cx - W / 2) / np; view.cy = lat + (cy - H / 2) / np; moved = true; drawMap();
+    view.ppd = np; view.cx = lon - (cx - W / 2) / np; view.cy = lat + (cy - H / 2) / np; markMoved(); drawMap();
   }
   map.addEventListener('pointerdown', function (e) {
     var r = map.getBoundingClientRect(); ptrs[e.pointerId] = { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -451,7 +502,7 @@ a { color: var(--accent); }
       if (before > 0) zoomAt(after / before, (nx + other.x) / 2, (ny + other.y) / 2);
     } else {
       if (!dragged && Math.hypot(e.clientX - downXY[0], e.clientY - downXY[1]) > 4) { dragged = true; map.classList.add('drag'); }
-      if (dragged) { view.cx -= (nx - p.x) / view.ppd; view.cy += (ny - p.y) / view.ppd; moved = true; drawMap(); }
+      if (dragged) { view.cx -= (nx - p.x) / view.ppd; view.cy += (ny - p.y) / view.ppd; markMoved(); drawMap(); }
     }
     p.x = nx; p.y = ny;
   });
@@ -467,7 +518,8 @@ a { color: var(--accent); }
   map.addEventListener('keydown', function (e) { var g = e.target.closest && e.target.closest('.st'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSel(+g.dataset.i); } });
   $('zin').onclick = function () { zoomAt(1.5, W / 2, H / 2); };
   $('zout').onclick = function () { zoomAt(1 / 1.5, W / 2, H / 2); };
-  $('zreset').onclick = function () { fitView(); drawMap(); };
+  $('zreset').onclick = function () { fitView('all'); drawMap(); };
+  Array.prototype.forEach.call(document.querySelectorAll('.views button'), function (b) { b.onclick = function () { fitView(b.dataset.view); drawMap(); }; });
 
   // ---- chart interaction ---------------------------------------------------------------------------------------
   cs.addEventListener('pointermove', chartHover);
@@ -475,7 +527,11 @@ a { color: var(--accent); }
   cs.addEventListener('pointerleave', function () { tip.style.display = 'none'; var h = document.getElementById('hov'); if (h) { h.setAttribute('x1', -5); h.setAttribute('x2', -5); } });
 
   // ---- controls ------------------------------------------------------------------------------------------------------
-  S.forEach(function (st, k) { var o = document.createElement('option'); o.value = k; o.textContent = st.id + ' · ' + st.name + (st.t.length ? '' : ' (no data)'); $('stsel').appendChild(o); });
+  D.countries.forEach(function (c) {
+    var og = document.createElement('optgroup'); og.label = c;
+    S.forEach(function (st, k) { if (st.cc !== c) return; var o = document.createElement('option'); o.value = k; o.textContent = st.id + ' · ' + st.name + (st.failed ? ' (fetch failed)' : st.t.length ? '' : ' (no data)'); og.appendChild(o); });
+    if (og.children.length) $('stsel').appendChild(og);
+  });
   $('stsel').value = sel;
   $('stsel').onchange = function () { setSel(+this.value); };
   $('tslider').max = N - 1;
@@ -501,9 +557,10 @@ a { color: var(--accent); }
   $('tbl').addEventListener('toggle', drawTable);
 
   var sgt0 = fmtSGT(stepT(0)), sgt1 = fmtSGT(stepT(N - 1));
-  $('meta').textContent = 'Hourly surface winds from METAR (Iowa Environmental Mesonet), ' + D.stations.length + ' stations in 6°S–6°N, 95–120°E. Map hours run ' + sgt0.replace(' SGT', '') + ' to ' + sgt1 + '. All times in SGT (UTC+8). Snapshot built ' + D.built + ' UTC.';
-  var nod = S.filter(function (s) { return !s.t.length; }).map(function (s) { return s.id; });
-  $('foot').textContent = 'Each map hour uses the report nearest that hour (within 30 min). Visibility is capped at 10 km (a METAR 9999). Stations with no reports in the window' + (nod.length ? ': ' + nod.join(', ') + '.' : ': none.');
+  $('meta').textContent = 'Hourly surface winds from METAR (Iowa Environmental Mesonet), ' + S.length + ' stations across Southeast Asia and Japan. Map hours run ' + sgt0.replace(' SGT', '') + ' to ' + sgt1 + '. All times in SGT (UTC+8). Snapshot built ' + D.built + ' UTC.';
+  var nod = S.filter(function (s) { return !s.t.length && !s.failed; }).map(function (s) { return s.id; });
+  var bad = S.filter(function (s) { return s.failed; }).map(function (s) { return s.id; });
+  $('foot').textContent = 'Each map hour uses the report nearest that hour (within 30 min). Visibility is capped at 10 km (a METAR 9999). Stations with no reports in the window (' + nod.length + ')' + (nod.length ? ': ' + nod.join(', ') + '.' : ': none.') + (bad.length ? ' Could not be fetched this build (' + bad.length + '): ' + bad.join(', ') + '.' : '');
 
   if (window.ResizeObserver) new ResizeObserver(relayout).observe(mapbox); else window.addEventListener('resize', relayout);
   measure(); fitView(); setStep(N - 1); drawCharts();

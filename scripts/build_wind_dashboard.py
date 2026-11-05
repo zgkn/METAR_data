@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Build a single-file HTML page: hourly METAR wind-barb map + collapsible 48 h time-series overlay.
+"""Build a single-file HTML page: hourly METAR wind-barb map + collapsible 48 h time-series overlay
+for Southeast Asia (11 IEM networks) and Japan.
 
-Pulls the last 48 h of METARs from IEM for every station inside the box, reusing the
+Pulls the last 48 h of METARs from IEM for every station in those networks, reusing the
 fetch/retry code in fetch_metar_sea.py. Times are UTC in the data, shown as SGT.
 Needs only requests and pandas; no secrets.
 
@@ -22,8 +23,20 @@ import pandas as pd  # noqa: E402
 
 import fetch_metar_sea as fm  # noqa: E402
 
-LON_RANGE, LAT_RANGE = (95.0, 120.0), (-6.0, 6.0)
-LAND_BOX = (88.0, -13.0, 127.0, 13.0)  # land clip, wider than the station box so panning has context
+NETWORKS = list(fm.COUNTRIES) + ["JP"]
+COUNTRY_NAMES = {**fm.COUNTRIES, "JP": "Japan"}
+COUNTRY_ORDER = ["Indonesia", "Malaysia", "Singapore", "Brunei", "Philippines", "Thailand", "Vietnam",
+                 "Cambodia", "Laos", "Myanmar", "Timor-Leste", "Japan"]
+REGION_LON, REGION_LAT = (90.0, 150.0), (-12.0, 47.0)  # sanity box around all stations
+LAND_BOX = (45.0, -40.0, 180.0, 65.0)                    # land clip; wide so the zoomed-out view has no cut edge
+LAND_MIN_STEP = 0.02                                     # drop vertices closer than this (degrees)
+# Quick-jump map views: lon range, lat range
+VIEWS = {
+    "all": {"lon": [95, 146.5], "lat": [-11, 46]},
+    "maritime": {"lon": [95, 120], "lat": [-6, 6]},       # Sumatra, Peninsula, Borneo (haze region)
+    "mainland": {"lon": [92, 110], "lat": [5, 29]},
+    "japan": {"lon": [122, 147], "lat": [24, 46]},
+}
 NSTEPS = 48
 LAND_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_land.geojson"
 
@@ -84,7 +97,7 @@ def land_rings(path):
             flat, last = [], None
             for x, y in clipped:
                 q = (round(x, 2), round(y, 2))
-                if q != last:
+                if last is None or max(abs(q[0] - last[0]), abs(q[1] - last[1])) >= LAND_MIN_STEP:
                     flat += [q[0], q[1]]
                     last = q
             if len(flat) >= 8:
@@ -101,7 +114,7 @@ def main():
     ap.add_argument("--template", default=HERE / "wind_dashboard_template.html")
     ap.add_argument("--land", default="output/ne_50m_land.geojson", help="Natural Earth land outline (downloaded if missing)")
     ap.add_argument("--output", default="site/index.html")
-    ap.add_argument("--sleep", type=float, default=1.5)
+    ap.add_argument("--sleep", type=float, default=3.0, help="min seconds between IEM requests")
     args = ap.parse_args()
 
     fetcher = fm.Fetcher(args.sleep)
@@ -114,18 +127,24 @@ def main():
     axis_end = h_end + dt.timedelta(minutes=30)
     print(f"now {now:%Y-%m-%d %H:%M}Z; steps {step0:%m-%d %H}Z .. {h_end:%m-%d %H}Z; axis {axis_start:%m-%d %H:%M}..{axis_end:%m-%d %H:%M}Z", file=sys.stderr)
 
-    # stations inside the box, from every SEA network listing
+    # every station in the SEA + Japan network listings
     stations = {}
-    for code in fm.COUNTRIES:
-        for sid, name, lon, lat in listing(fetcher, code):
-            if LON_RANGE[0] <= lon <= LON_RANGE[1] and LAT_RANGE[0] <= lat <= LAT_RANGE[1]:
-                stations.setdefault(sid, dict(id=sid, name=name.title(), lon=round(lon, 3), lat=round(lat, 3)))
-    ids = sorted(stations)
-    print(f"{len(ids)} stations in box", file=sys.stderr)
+    for code in NETWORKS:
+        found = listing(fetcher, code)
+        if not found:
+            print(f"[{code}__ASOS] listing missing or empty; skipped", file=sys.stderr)
+        for sid, name, lon, lat in found:
+            if REGION_LON[0] <= lon <= REGION_LON[1] and REGION_LAT[0] <= lat <= REGION_LAT[1]:
+                cc = COUNTRY_NAMES.get(fm.country_code(sid, f"{code}__ASOS"), code)
+                stations.setdefault(sid, dict(id=sid, name=name.title(), cc=cc, lon=round(lon, 3), lat=round(lat, 3)))
+    # group by country (so the picker and table read by country), then by ID
+    corder = {c: i for i, c in enumerate(COUNTRY_ORDER)}
+    ids = sorted(stations, key=lambda i: (corder.get(stations[i]["cc"], 99), i))
+    print(f"{len(ids)} stations", file=sys.stderr)
 
     utc = dt.timezone.utc
     req = fm.Requester(fetcher, (axis_start - dt.timedelta(minutes=1)).replace(tzinfo=utc), (axis_end + dt.timedelta(minutes=31)).replace(tzinfo=utc))
-    frames = []
+    frames, failed = [], []
     for i in range(0, len(ids), 15):
         batch = ids[i:i + 15]
         print(f"requesting {batch[0]}..{batch[-1]} ({len(batch)})", file=sys.stderr)
@@ -138,6 +157,7 @@ def main():
                     frames.append(req.fetch([sid]))
                 except RuntimeError as e2:
                     print(f"  {sid} failed: {e2}", file=sys.stderr)
+                    failed.append(sid)
     df = pd.concat([f for f in frames if len(f)], ignore_index=True)
     df["t"] = pd.to_datetime(df["valid"])
     df = df[(df.t >= axis_start) & (df.t <= axis_end)].drop_duplicates(["station", "t", "metar"]).sort_values(["station", "t"])
@@ -163,6 +183,8 @@ def main():
     for s in stations.values():
         for k in ("t", "spd", "gst", "dir", "vis", "tmp", "dew", "metar"):
             s.setdefault(k, [])
+    for sid in failed:  # request failed after retries: unknown, not "no data"
+        stations[sid]["failed"] = True
 
     land = Path(args.land)
     if not land.exists():
@@ -176,7 +198,8 @@ def main():
         step0=int((step0 - epoch).total_seconds() * 1000),
         nsteps=NSTEPS,
         span=int((axis_end - axis_start).total_seconds() // 60),
-        box=dict(lon=LON_RANGE, lat=LAT_RANGE),
+        views=VIEWS,
+        countries=COUNTRY_ORDER,
         stations=[stations[i] for i in ids],
         land=land_rings(land),
     )
@@ -187,7 +210,13 @@ def main():
     n_with = sum(1 for s in data["stations"] if s["t"])
     print(f"wrote {args.output} ({len(html)/1024:.0f} KB); {n_with}/{len(ids)} stations with data; "
           f"{sum(len(s['t']) for s in data['stations'])} obs; {len(data['land'])} land rings", file=sys.stderr)
-    print("no data:", [s["id"] for s in data["stations"] if not s["t"]], file=sys.stderr)
+    for c in COUNTRY_ORDER:
+        grp = [s for s in data["stations"] if s["cc"] == c]
+        if grp:
+            print(f"  {c}: {sum(1 for s in grp if s['t'])}/{len(grp)} stations, {sum(len(s['t']) for s in grp)} obs", file=sys.stderr)
+    print("no data:", [s["id"] for s in data["stations"] if not s["t"] and not s.get("failed")], file=sys.stderr)
+    if failed:
+        print(f"WARNING: requests failed for {len(failed)} stations (shown as 'could not be fetched'): {failed}", file=sys.stderr)
 
 
 if __name__ == "__main__":
