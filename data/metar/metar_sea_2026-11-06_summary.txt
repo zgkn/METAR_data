@@ -1,19 +1,19 @@
 METAR Southeast Asia, SGT day 2026-11-06
 UTC window: 2026-11-05T16:00Z to 2026-11-06T16:00Z (end exclusive)
-Generated: 2026-11-06 04:30Z
+Generated: 2026-11-06 04:39Z
 
 Stations requested: 148
 Stations returning data: 119
 Stations with zero data: 29
 Stations whose request failed after retries: 0
-Total observations: 1884
+Total observations: 1891
 
 Observations per country:
-  Singapore: 55 obs from 3 stations
+  Singapore: 56 obs from 3 stations
   Malaysia: 373 obs from 25 stations
   Indonesia: 674 obs from 27 stations
   Thailand: 364 obs from 35 stations
-  Vietnam: 218 obs from 10 stations
+  Vietnam: 224 obs from 10 stations
   Philippines: 115 obs from 11 stations
   Cambodia: 0 obs
   Laos: 31 obs from 5 stations
