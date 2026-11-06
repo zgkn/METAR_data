@@ -1,40 +1,40 @@
 METAR Southeast Asia, SGT day 2026-11-06
 UTC window: 2026-11-05T16:00Z to 2026-11-06T16:00Z (end exclusive)
-Generated: 2026-11-05 23:40Z
+Generated: 2026-11-06 00:39Z
 
 Stations requested: 148
-Stations returning data: 108
-Stations with zero data: 40
+Stations returning data: 119
+Stations with zero data: 29
 Stations whose request failed after retries: 0
-Total observations: 1040
+Total observations: 1210
 
 Observations per country:
-  Singapore: 32 obs from 3 stations
-  Malaysia: 228 obs from 25 stations
-  Indonesia: 404 obs from 27 stations
-  Thailand: 159 obs from 30 stations
-  Vietnam: 124 obs from 10 stations
-  Philippines: 60 obs from 10 stations
+  Singapore: 36 obs from 3 stations
+  Malaysia: 257 obs from 25 stations
+  Indonesia: 458 obs from 27 stations
+  Thailand: 200 obs from 35 stations
+  Vietnam: 144 obs from 10 stations
+  Philippines: 71 obs from 11 stations
   Cambodia: 0 obs
-  Laos: 4 obs from 1 stations
-  Myanmar: 14 obs from 1 stations
-  Brunei: 15 obs from 1 stations
+  Laos: 10 obs from 5 stations
+  Myanmar: 17 obs from 2 stations
+  Brunei: 17 obs from 1 stations
   Timor-Leste: 0 obs
 
 Networks skipped (missing or empty listing): BN__ASOS, TL__ASOS
-Stations with zero data: WABP (ID__ASOS), WADA (ID__ASOS), WAHQ (ID__ASOS), WAKK (ID__ASOS), WALR (ID__ASOS), WAML (ID__ASOS), WARJ (ID__ASOS), WARQ (ID__ASOS), WARS (ID__ASOS), WATL (ID__ASOS), WAYY (ID__ASOS), WIPT (ID__ASOS), WIJJ (ID__ASOS - not in listing), WIPL (ID__ASOS - not in listing), WIPK (ID__ASOS - not in listing), WAOP (ID__ASOS - not in listing), VTCH (TH__ASOS), VTCP (TH__ASOS), VTPB (TH__ASOS), VTPM (TH__ASOS), VTPN (TH__ASOS), VTPT (TH__ASOS), VTSH (TH__ASOS), VTSK (TH__ASOS), VTSY (TH__ASOS), RPLV (PH__ASOS), RPMR (PH__ASOS), RPVO (PH__ASOS), VDDS (KH__ASOS), VDPP (KH__ASOS), VDSA (KH__ASOS), VDSR (KH__ASOS), VDSV (KH__ASOS), VDTI (KH__ASOS), VLLB (LA__ASOS), VLLN (LA__ASOS), VLPS (LA__ASOS), VLSK (LA__ASOS), VYMD (MM__ASOS), VYNT (MM__ASOS)
+Stations with zero data: WABP (ID__ASOS), WADA (ID__ASOS), WAHQ (ID__ASOS), WAKK (ID__ASOS), WALR (ID__ASOS), WAML (ID__ASOS), WARJ (ID__ASOS), WARQ (ID__ASOS), WARS (ID__ASOS), WATL (ID__ASOS), WAYY (ID__ASOS), WIPT (ID__ASOS), WIJJ (ID__ASOS - not in listing), WIPL (ID__ASOS - not in listing), WIPK (ID__ASOS - not in listing), WAOP (ID__ASOS - not in listing), VTPN (TH__ASOS), VTPT (TH__ASOS), VTSH (TH__ASOS), VTSK (TH__ASOS), RPLV (PH__ASOS), RPVO (PH__ASOS), VDDS (KH__ASOS), VDPP (KH__ASOS), VDSA (KH__ASOS), VDSR (KH__ASOS), VDSV (KH__ASOS), VDTI (KH__ASOS), VYNT (MM__ASOS)
 Stations whose request failed (data status unknown): none
 
 Haze watchlist (Sumatra/Kalimantan):
-  WIPP Palembang: 15 obs
-  WIBB Pekanbaru: 15 obs
-  WIOO Pontianak: 15 obs
-  WAOO Banjarmasin: 15 obs
-  WIMM Medan: 15 obs
-  WIEE Padang (Minangkabau): 15 obs
+  WIPP Palembang: 17 obs
+  WIBB Pekanbaru: 17 obs
+  WIOO Pontianak: 17 obs
+  WAOO Banjarmasin: 17 obs
+  WIMM Medan: 17 obs
+  WIEE Padang (Minangkabau): 17 obs
   WIJJ Jambi: 0 obs; not in any IEM network listing (no data available from IEM)
   WIPL Bengkulu: 0 obs; not in any IEM network listing (no data available from IEM)
   WIPK Pangkal Pinang: 0 obs; not in any IEM network listing (no data available from IEM)
-  WALL Balikpapan: 15 obs
+  WALL Balikpapan: 17 obs
   WAOP Palangkaraya: 0 obs; not in any IEM network listing (no data available from IEM)
-  WAQQ Tarakan: 15 obs
+  WAQQ Tarakan: 17 obs
