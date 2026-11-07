@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build a single-file HTML page: hourly METAR wind-barb map + collapsible 48 h time-series overlay
+"""Build a single-file HTML page: hourly METAR wind-barb map + collapsible time-series overlay (7 days by default)
 for Southeast Asia (11 IEM networks) and Japan.
 
-Pulls the last 48 h of METARs from IEM for every station in those networks, reusing the
+Pulls the last 7 days (--days) of METARs from IEM for every station in those networks, reusing the
 fetch/retry code in fetch_metar_sea.py. Times are UTC in the data, shown as SGT.
 Needs only requests and pandas; no secrets.
 
@@ -37,7 +37,7 @@ VIEWS = {
     "mainland": {"lon": [92, 110], "lat": [5, 29]},
     "japan": {"lon": [122, 147], "lat": [24, 46]},
 }
-NSTEPS = 48
+DEFAULT_DAYS = 7
 LAND_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_land.geojson"
 
 
@@ -114,6 +114,7 @@ def main():
     ap.add_argument("--template", default=HERE / "wind_dashboard_template.html")
     ap.add_argument("--land", default="output/ne_50m_land.geojson", help="Natural Earth land outline (downloaded if missing)")
     ap.add_argument("--output", default="site/index.html")
+    ap.add_argument("--days", type=int, default=DEFAULT_DAYS, help="history window in days (map hours and overlay)")
     ap.add_argument("--sleep", type=float, default=3.0, help="min seconds between IEM requests")
     args = ap.parse_args()
 
@@ -122,7 +123,8 @@ def main():
     # last full hour whose +/-30 min obs window has closed
     now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     h_end = (now - dt.timedelta(minutes=30)).replace(minute=0, second=0, microsecond=0)
-    step0 = h_end - dt.timedelta(hours=NSTEPS - 1)
+    nsteps = args.days * 24
+    step0 = h_end - dt.timedelta(hours=nsteps - 1)
     axis_start = step0 - dt.timedelta(minutes=30)
     axis_end = h_end + dt.timedelta(minutes=30)
     print(f"now {now:%Y-%m-%d %H:%M}Z; steps {step0:%m-%d %H}Z .. {h_end:%m-%d %H}Z; axis {axis_start:%m-%d %H:%M}..{axis_end:%m-%d %H:%M}Z", file=sys.stderr)
@@ -197,7 +199,7 @@ def main():
         built=now.strftime("%Y-%m-%d %H:%M"),
         t0=int((axis_start - epoch).total_seconds() * 1000),
         step0=int((step0 - epoch).total_seconds() * 1000),
-        nsteps=NSTEPS,
+        nsteps=nsteps,
         span=int((axis_end - axis_start).total_seconds() // 60),
         views=VIEWS,
         countries=COUNTRY_ORDER,
