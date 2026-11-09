@@ -1,24 +1,24 @@
 METAR Southeast Asia, SGT day 2026-11-09
 UTC window: 2026-11-08T16:00Z to 2026-11-09T16:00Z (end exclusive)
-Generated: 2026-11-09 06:39Z
+Generated: 2026-11-09 07:40Z
 
 Stations requested: 148
 Stations returning data: 119
 Stations with zero data: 29
 Stations whose request failed after retries: 0
-Total observations: 2255
+Total observations: 2429
 
 Observations per country:
-  Singapore: 69 obs from 3 stations
-  Malaysia: 439 obs from 25 stations
-  Indonesia: 782 obs from 27 stations
-  Thailand: 446 obs from 35 stations
-  Vietnam: 274 obs from 10 stations
-  Philippines: 137 obs from 11 stations
+  Singapore: 75 obs from 3 stations
+  Malaysia: 471 obs from 25 stations
+  Indonesia: 836 obs from 27 stations
+  Thailand: 487 obs from 35 stations
+  Vietnam: 294 obs from 10 stations
+  Philippines: 148 obs from 11 stations
   Cambodia: 0 obs
-  Laos: 43 obs from 5 stations
-  Myanmar: 36 obs from 2 stations
-  Brunei: 29 obs from 1 stations
+  Laos: 48 obs from 5 stations
+  Myanmar: 39 obs from 2 stations
+  Brunei: 31 obs from 1 stations
   Timor-Leste: 0 obs
 
 Networks skipped (missing or empty listing): BN__ASOS, TL__ASOS
@@ -26,15 +26,15 @@ Stations with zero data: WABP (ID__ASOS), WADA (ID__ASOS), WAHQ (ID__ASOS), WAKK
 Stations whose request failed (data status unknown): none
 
 Haze watchlist (Sumatra/Kalimantan):
-  WIPP Palembang: 29 obs
-  WIBB Pekanbaru: 29 obs
-  WIOO Pontianak: 29 obs
-  WAOO Banjarmasin: 29 obs
-  WIMM Medan: 30 obs
-  WIEE Padang (Minangkabau): 29 obs
+  WIPP Palembang: 31 obs
+  WIBB Pekanbaru: 31 obs
+  WIOO Pontianak: 31 obs
+  WAOO Banjarmasin: 31 obs
+  WIMM Medan: 32 obs
+  WIEE Padang (Minangkabau): 31 obs
   WIJJ Jambi: 0 obs; not in any IEM network listing (no data available from IEM)
   WIPL Bengkulu: 0 obs; not in any IEM network listing (no data available from IEM)
   WIPK Pangkal Pinang: 0 obs; not in any IEM network listing (no data available from IEM)
-  WALL Balikpapan: 29 obs
+  WALL Balikpapan: 31 obs
   WAOP Palangkaraya: 0 obs; not in any IEM network listing (no data available from IEM)
-  WAQQ Tarakan: 29 obs
+  WAQQ Tarakan: 31 obs
