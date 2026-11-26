@@ -1,6 +1,6 @@
 METAR Southeast Asia, SGT day 2026-11-25
 UTC window: 2026-11-24T16:00Z to 2026-11-25T16:00Z (end exclusive)
-Generated: 2026-11-25 17:39Z
+Generated: 2026-11-26 01:39Z
 
 Stations requested: 148
 Stations returning data: 122
